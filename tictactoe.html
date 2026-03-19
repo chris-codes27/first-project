@@ -16,15 +16,105 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      padding: 2rem 1rem;
     }
 
     h1 {
       font-size: 2.5rem;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1.2rem;
       letter-spacing: 2px;
       color: #e94560;
     }
 
+    /* Mode selector */
+    .mode-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 1.4rem;
+      font-size: 0.9rem;
+      background: #16213e;
+      color: #aaa;
+      border: 2px solid #0f3460;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.15s;
+    }
+
+    .mode-btn:hover { background: #0f3460; color: #eee; }
+
+    .mode-btn.active {
+      background: #e94560;
+      border-color: #e94560;
+      color: #fff;
+    }
+
+    /* Difficulty selector */
+    .difficulty-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .difficulty-selector.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .diff-label {
+      font-size: 0.8rem;
+      color: #888;
+      align-self: center;
+      margin-right: 0.3rem;
+    }
+
+    .diff-btn {
+      padding: 0.35rem 1rem;
+      font-size: 0.82rem;
+      background: #16213e;
+      color: #aaa;
+      border: 2px solid #0f3460;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .diff-btn:hover { background: #0f3460; color: #eee; }
+
+    .diff-btn.active {
+      border-color: #a8dadc;
+      color: #a8dadc;
+      background: #0f3460;
+    }
+
+    /* Score */
+    #score {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.2rem;
+      font-size: 1rem;
+    }
+
+    .score-box { text-align: center; }
+
+    .score-box span {
+      display: block;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .score-box.x-score span { color: #e94560; }
+    .score-box.o-score span { color: #a8dadc; }
+    .score-box.draw-score span { color: #888; }
+
+    /* Status */
     #status {
       font-size: 1.2rem;
       margin-bottom: 1.5rem;
@@ -32,6 +122,7 @@
       color: #a8dadc;
     }
 
+    /* Board */
     #board {
       display: grid;
       grid-template-columns: repeat(3, 110px);
@@ -52,19 +143,17 @@
       user-select: none;
     }
 
-    .cell:hover:not(.taken) {
-      background: #0f3460;
-      transform: scale(1.04);
-    }
-
+    .cell:hover:not(.taken) { background: #0f3460; transform: scale(1.04); }
     .cell.x { color: #e94560; }
     .cell.o { color: #a8dadc; }
-
     .cell.win {
       background: #0f3460;
       box-shadow: 0 0 16px rgba(233, 69, 96, 0.6);
     }
 
+    .cell.thinking { cursor: not-allowed; }
+
+    /* Reset */
     #reset {
       margin-top: 2rem;
       padding: 0.7rem 2.2rem;
@@ -78,40 +167,28 @@
       transition: background 0.15s, transform 0.1s;
     }
 
-    #reset:hover {
-      background: #c73652;
-      transform: scale(1.04);
-    }
-
-    #score {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 1.5rem;
-      font-size: 1rem;
-    }
-
-    .score-box {
-      text-align: center;
-    }
-
-    .score-box span {
-      display: block;
-      font-size: 1.8rem;
-      font-weight: bold;
-    }
-
-    .score-box.x-score span { color: #e94560; }
-    .score-box.o-score span { color: #a8dadc; }
-    .score-box.draw-score span { color: #888; }
+    #reset:hover { background: #c73652; transform: scale(1.04); }
   </style>
 </head>
 <body>
   <h1>Tic Tac Toe</h1>
 
+  <div class="mode-selector">
+    <button class="mode-btn active" id="btn-pvp">2 Players</button>
+    <button class="mode-btn" id="btn-cpu">vs Computer</button>
+  </div>
+
+  <div class="difficulty-selector" id="difficulty-selector">
+    <span class="diff-label">Difficulty:</span>
+    <button class="diff-btn active" data-diff="easy">Easy</button>
+    <button class="diff-btn" data-diff="medium">Medium</button>
+    <button class="diff-btn" data-diff="hard">Hard</button>
+  </div>
+
   <div id="score">
-    <div class="score-box x-score">X <span id="score-x">0</span></div>
-    <div class="score-box draw-score">Draw <span id="score-draw">0</span></div>
-    <div class="score-box o-score">O <span id="score-o">0</span></div>
+    <div class="score-box x-score"><span id="score-x">0</span> <span id="label-x" style="font-size:1rem;font-weight:normal;color:#aaa">X</span></div>
+    <div class="score-box draw-score"><span id="score-draw">0</span> <span style="font-size:1rem;font-weight:normal;color:#666">Draw</span></div>
+    <div class="score-box o-score"><span id="score-o">0</span> <span id="label-o" style="font-size:1rem;font-weight:normal;color:#aaa">O</span></div>
   </div>
 
   <div id="status">X's turn</div>
@@ -132,62 +209,219 @@
 
   <script>
     const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
     let board, current, over;
+    let mode = 'pvp';       // 'pvp' | 'cpu'
+    let difficulty = 'easy'; // 'easy' | 'medium' | 'hard'
     const score = { X: 0, O: 0, Draw: 0 };
 
     const cells = document.querySelectorAll('.cell');
     const status = document.getElementById('status');
 
+    /* ── Init ── */
     function init() {
       board = Array(9).fill(null);
       current = 'X';
       over = false;
       cells.forEach(c => { c.textContent = ''; c.className = 'cell'; });
-      status.textContent = "X's turn";
+      status.textContent = mode === 'cpu' ? "Your turn (X)" : "X's turn";
     }
 
-    function checkWin() {
-      for (const [a, b, c] of WINS) {
-        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-          return [a, b, c];
-        }
+    /* ── Win check ── */
+    function checkWin(b) {
+      for (const [a, bx, c] of WINS) {
+        if (b[a] && b[a] === b[bx] && b[a] === b[c]) return b[a];
       }
       return null;
     }
 
+    function getWinLine(b) {
+      for (const line of WINS) {
+        const [a, bx, c] = line;
+        if (b[a] && b[a] === b[bx] && b[a] === b[c]) return line;
+      }
+      return null;
+    }
+
+    /* ── Player click ── */
     cells.forEach(cell => {
       cell.addEventListener('click', () => {
         const i = +cell.dataset.i;
         if (over || board[i]) return;
+        if (mode === 'cpu' && current === 'O') return; // block clicks during cpu turn
 
-        board[i] = current;
-        cell.textContent = current;
-        cell.classList.add(current.toLowerCase(), 'taken');
+        placeMove(i, current);
 
-        const win = checkWin();
-        if (win) {
-          win.forEach(idx => cells[idx].classList.add('win'));
-          status.textContent = `${current} wins!`;
-          score[current]++;
-          updateScore();
-          over = true;
-        } else if (board.every(Boolean)) {
-          status.textContent = "It's a draw!";
-          score.Draw++;
-          updateScore();
-          over = true;
-        } else {
-          current = current === 'X' ? 'O' : 'X';
-          status.textContent = `${current}'s turn`;
+        if (!over && mode === 'cpu' && current === 'O') {
+          // Disable board while CPU thinks
+          cells.forEach(c => c.classList.add('thinking'));
+          status.textContent = "Computer is thinking…";
+          setTimeout(() => {
+            cells.forEach(c => c.classList.remove('thinking'));
+            const move = getCpuMove();
+            if (move !== -1) placeMove(move, 'O');
+          }, 400);
         }
       });
     });
 
+    function placeMove(i, player) {
+      board[i] = player;
+      cells[i].textContent = player;
+      cells[i].classList.add(player.toLowerCase(), 'taken');
+
+      const line = getWinLine(board);
+      if (line) {
+        line.forEach(idx => cells[idx].classList.add('win'));
+        const label = mode === 'cpu' ? (player === 'X' ? 'You win! 🎉' : 'Computer wins!') : `${player} wins!`;
+        status.textContent = label;
+        score[player]++;
+        updateScore();
+        over = true;
+      } else if (board.every(Boolean)) {
+        status.textContent = "It's a draw!";
+        score.Draw++;
+        updateScore();
+        over = true;
+      } else {
+        current = player === 'X' ? 'O' : 'X';
+        if (mode === 'cpu') {
+          status.textContent = current === 'X' ? "Your turn (X)" : "Computer is thinking…";
+        } else {
+          status.textContent = `${current}'s turn`;
+        }
+      }
+    }
+
+    /* ── Score ── */
     function updateScore() {
       document.getElementById('score-x').textContent = score.X;
       document.getElementById('score-o').textContent = score.O;
       document.getElementById('score-draw').textContent = score.Draw;
     }
+
+    /* ────────────────────────────
+       AI
+    ──────────────────────────── */
+    function emptyCells(b) {
+      return b.reduce((acc, v, i) => { if (!v) acc.push(i); return acc; }, []);
+    }
+
+    function getCpuMove() {
+      if (difficulty === 'easy')   return easyMove();
+      if (difficulty === 'medium') return mediumMove();
+      return hardMove();
+    }
+
+    /* Easy: fully random */
+    function easyMove() {
+      const empty = emptyCells(board);
+      return empty[Math.floor(Math.random() * empty.length)] ?? -1;
+    }
+
+    /* Medium: always take a win, always block a loss, otherwise random */
+    function mediumMove() {
+      // Take winning move
+      const win = findThreat(board, 'O');
+      if (win !== -1) return win;
+      // Block player's winning move
+      const block = findThreat(board, 'X');
+      if (block !== -1) return block;
+      // Random otherwise
+      return easyMove();
+    }
+
+    function findThreat(b, player) {
+      for (let i = 0; i < 9; i++) {
+        if (!b[i]) {
+          b[i] = player;
+          const won = checkWin(b);
+          b[i] = null;
+          if (won === player) return i;
+        }
+      }
+      return -1;
+    }
+
+    /* Hard: minimax (unbeatable) */
+    function hardMove() {
+      let bestScore = -Infinity, bestMove = -1;
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'O';
+          const s = minimax(board, 0, false);
+          board[i] = null;
+          if (s > bestScore) { bestScore = s; bestMove = i; }
+        }
+      }
+      return bestMove;
+    }
+
+    function minimax(b, depth, isMaximizing) {
+      const winner = checkWin(b);
+      if (winner === 'O') return 10 - depth;
+      if (winner === 'X') return depth - 10;
+      if (b.every(Boolean)) return 0;
+
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (!b[i]) {
+            b[i] = 'O';
+            best = Math.max(best, minimax(b, depth + 1, false));
+            b[i] = null;
+          }
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (!b[i]) {
+            b[i] = 'X';
+            best = Math.min(best, minimax(b, depth + 1, true));
+            b[i] = null;
+          }
+        }
+        return best;
+      }
+    }
+
+    /* ── Mode buttons ── */
+    document.getElementById('btn-pvp').addEventListener('click', () => {
+      mode = 'pvp';
+      document.getElementById('btn-pvp').classList.add('active');
+      document.getElementById('btn-cpu').classList.remove('active');
+      document.getElementById('difficulty-selector').classList.remove('visible');
+      document.getElementById('label-x').textContent = 'X';
+      document.getElementById('label-o').textContent = 'O';
+      score.X = score.O = score.Draw = 0;
+      updateScore();
+      init();
+    });
+
+    document.getElementById('btn-cpu').addEventListener('click', () => {
+      mode = 'cpu';
+      document.getElementById('btn-cpu').classList.add('active');
+      document.getElementById('btn-pvp').classList.remove('active');
+      document.getElementById('difficulty-selector').classList.add('visible');
+      document.getElementById('label-x').textContent = 'You';
+      document.getElementById('label-o').textContent = 'CPU';
+      score.X = score.O = score.Draw = 0;
+      updateScore();
+      init();
+    });
+
+    /* ── Difficulty buttons ── */
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        difficulty = btn.dataset.diff;
+        score.X = score.O = score.Draw = 0;
+        updateScore();
+        init();
+      });
+    });
 
     document.getElementById('reset').addEventListener('click', init);
 
