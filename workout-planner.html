@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Workout Plan Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b0b18;
+      --card: #1a1a2e;
+      --card2: #20203a;
+      --border: rgba(255,255,255,0.07);
+      --text: #e2e2f0;
+      --muted: #7878a0;
+      --accent: #7c6ff7;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Header */
+    .page-header {
+      text-align: center;
+      padding: 3.5rem 1rem 2rem;
+    }
+    .page-header h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #7c6ff7, #ff6b8b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.4rem;
+    }
+    .page-header p { color: var(--muted); font-size: 1.05rem; }
+
+    /* Form */
+    .form-wrap { max-width: 820px; margin: 0 auto; padding: 0 1.5rem 5rem; }
+
+    .fieldset-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.9rem;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 2.2rem;
+    }
+    .opt {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 3px solid transparent;
+      cursor: pointer;
+      aspect-ratio: 3 / 2;
+      background: var(--card2);
+      transition: border-color .18s, transform .14s, box-shadow .18s;
+      user-select: none;
+    }
+    .opt:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .opt.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(124,111,247,0.35);
+    }
+    .opt img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: transform .35s;
+    }
+    .opt:hover img { transform: scale(1.06); }
+    .opt-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 55%, transparent 100%);
+      display: flex; align-items: flex-end;
+      padding: 0.7rem 0.75rem;
+    }
+    .opt-label {
+      color: #fff; font-weight: 700;
+      font-size: 0.88rem; line-height: 1.2;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    .opt-check {
+      position: absolute; top: 0.45rem; right: 0.45rem;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 0.72rem; font-weight: 900;
+      display: none; align-items: center; justify-content: center;
+    }
+    .opt.selected .opt-check { display: flex; }
+
+    .gen-btn {
+      width: 100%;
+      padding: 1.1rem;
+      background: linear-gradient(135deg, #7c6ff7, #ff6b8b);
+      border: none;
+      border-radius: 13px;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: transform .14s, box-shadow .14s;
+    }
+    .gen-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,111,247,.4); }
+
+    .error-banner {
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius: 10px;
+      padding: 0.9rem 1.2rem;
+      color: #f87171;
+      font-size: 0.9rem;
+      margin-bottom: 1.4rem;
+      display: none;
+    }
+    .error-banner.show { display: block; }
+
+    /* Loading */
+    #loading-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; padding: 2rem; }
+    #loading-screen.active { display: flex; }
+
+    .spinner {
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      border: 4px solid rgba(124,111,247,.2);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+      margin-bottom: 1.6rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-label { font-size: 1.15rem; color: var(--muted); }
+    .dots span { animation: blink 1.4s infinite both; }
+    .dots span:nth-child(2) { animation-delay: .22s; }
+    .dots span:nth-child(3) { animation-delay: .44s; }
+    @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+    /* Results */
+    #results-screen { display: none; }
+    #results-screen.active { display: block; }
+    .results-wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem 5rem; }
+
+    .plan-intro { text-align: center; margin-bottom: 1.5rem; }
+    .plan-title-text { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: 0.5rem; }
+    .plan-overview-text { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 0.95rem; }
+
+    .result-actions { display: flex; gap: 0.8rem; justify-content: center; margin-bottom: 2.5rem; }
+    .rbtn { padding: 0.65rem 1.4rem; border-radius: 9px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: transform .14s; }
+    .rbtn:hover { transform: translateY(-1px); }
+    .rbtn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .rbtn-primary { background: linear-gradient(135deg, #7c6ff7, #ff6b8b); color: #fff; }
+
+    /* Day cards */
+    .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.1rem; margin-bottom: 1.5rem; }
+
+    .day-card { background: var(--card); border-radius: 18px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; }
+    .day-hd { padding: 1.2rem 1.4rem; display: flex; justify-content: space-between; align-items: flex-start; }
+    .day-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: .8; margin-bottom: 0.25rem; }
+    .day-focus-label { font-size: 1.1rem; font-weight: 800; line-height: 1.3; }
+    .day-meta-col { text-align: right; }
+    .day-duration { font-size: 0.78rem; opacity: .75; }
+    .intensity-pill { display: inline-block; margin-top: 0.3rem; padding: 0.18rem 0.7rem; border-radius: 20px; font-size: 0.68rem; font-weight: 700; letter-spacing: .5px; }
+
+    .day-bd { padding: 1.1rem 1.4rem; flex: 1; }
+    .mini-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
+    .phase-box { background: var(--card2); border-radius: 9px; padding: 0.55rem 0.8rem; font-size: 0.83rem; color: var(--muted); margin-bottom: 1rem; }
+
+    .ex-list { margin-bottom: 1rem; }
+    .ex-row { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
+    .ex-row:last-child { border-bottom: none; }
+    .ex-name-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.28rem; }
+    .ex-name { font-weight: 600; font-size: 0.92rem; }
+    .yt-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: rgba(255,0,0,0.12); color: #ff4444;
+      border: 1px solid rgba(255,0,0,0.25); border-radius: 6px;
+      padding: 0.18rem 0.5rem; font-size: 0.7rem; font-weight: 600;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      transition: background .15s, border-color .15s;
+    }
+    .yt-btn:hover { background: rgba(255,0,0,0.22); border-color: rgba(255,0,0,0.5); }
+    .yt-btn svg { width: 13px; height: 13px; fill: #ff4444; flex-shrink: 0; }
+    .ex-stats { display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.77rem; color: var(--muted); }
+    .ex-note { font-size: 0.77rem; color: var(--muted); font-style: italic; margin-top: 0.25rem; }
+
+    .rest-inner { text-align: center; padding: 1.8rem 1rem; color: var(--muted); }
+    .rest-icon { font-size: 2.8rem; margin-bottom: 0.6rem; }
+    .rest-inner p { font-size: 0.88rem; }
+
+    .day-tip { background: rgba(124,111,247,.1); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.55rem 0.8rem; font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem; }
+
+    .bottom-tips { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .tip-box { background: var(--card); border-radius: 14px; padding: 1.3rem; border: 1px solid var(--border); }
+    .tip-box h3 { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
+    .tip-box p { font-size: 0.9rem; }
+
+    @media (max-width: 600px) {
+      .days-grid { grid-template-columns: 1fr; }
+      .bottom-tips { grid-template-columns: 1fr; }
+      .option-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- FORM -->
+<div id="form-screen" class="screen active">
+  <div class="page-header">
+    <h1>💪 Workout Planner</h1>
+    <p>Get a personalized 7-day workout plan — no account needed</p>
+  </div>
+  <div class="form-wrap">
+    <div class="error-banner" id="form-error"></div>
+
+    <p class="fieldset-title">Workout Preference</p>
+    <div class="option-grid" id="pref-grid"></div>
+
+    <p class="fieldset-title">Fitness Goal</p>
+    <div class="option-grid" id="goal-grid"></div>
+
+    <p class="fieldset-title">Fitness Level</p>
+    <div class="option-grid" id="level-grid"></div>
+
+    <button class="gen-btn" onclick="generatePlan()">Generate My 7-Day Plan →</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-label">Building your plan<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen">
+  <div class="page-header"><h1>Your Workout Plan</h1></div>
+  <div class="results-wrap">
+    <div class="result-actions">
+      <button class="rbtn rbtn-ghost" onclick="goBack()">← Start Over</button>
+      <button class="rbtn rbtn-primary" onclick="regen()">↻ Regenerate</button>
+    </div>
+    <div id="plan-out"></div>
+  </div>
+</div>
+
+<script>
+/* ─── UI options ─── */
+const BASE = 'https://images.unsplash.com/photo-';
+const IMG  = (id) => `${BASE}${id}?auto=format&fit=crop&w=400&h=270&q=80`;
+
+const PREFS  = [
+  {l:'Gym',            v:'Gym',           img: IMG('1534438327276-14e5300c3a48')},
+  {l:'Home',           v:'Home',          img: IMG('1571019613454-1cb2f99b2d8b')},
+  {l:'Calisthenics',   v:'Calisthenics',  img: IMG('1517963628622-56b4a89f3a5a')},
+  {l:'Yoga',           v:'Yoga',          img: IMG('1506126613408-eca07ce68773')},
+  {l:'Outdoor',        v:'Outdoor',       img: IMG('1476480862126-209bfaa8edc8')},
+  {l:'Mixed',          v:'Mixed',         img: IMG('1518611012118-696072aa579a')},
+];
+const GOALS  = [
+  {l:'Lose Weight',    v:'Weight Loss',     img: IMG('1552674605-db5fecabfe68')},
+  {l:'Build Muscle',   v:'Muscle Building', img: IMG('1581009137042-c552e485697a')},
+  {l:'Endurance',      v:'Endurance',       img: IMG('1547919307-1ecfcc2a6e73')},
+  {l:'Flexibility',    v:'Flexibility',     img: IMG('1518611012118-696072aa579a')},
+  {l:'Build Strength', v:'Strength',        img: IMG('1534367610401-9f5ed68180aa')},
+  {l:'General Fitness',v:'General Fitness', img: IMG('1517836357463-d25dfeac3438')},
+];
+const LEVELS = [
+  {l:'Beginner',     v:'Beginner',     img: IMG('1461897104016-0b3b00cc81ee')},
+  {l:'Intermediate', v:'Intermediate', img: IMG('1434596922112-19c563067271')},
+  {l:'Advanced',     v:'Advanced',     img: IMG('1549060279-7e168fcee0c2')},
+];
+
+const DAY_COLORS = [
+  'linear-gradient(135deg,#e94560,#c0392b)',
+  'linear-gradient(135deg,#f39c12,#d35400)',
+  'linear-gradient(135deg,#27ae60,#16a085)',
+  'linear-gradient(135deg,#2980b9,#1a6fa0)',
+  'linear-gradient(135deg,#8e44ad,#6c3483)',
+  'linear-gradient(135deg,#1abc9c,#148f77)',
+  'linear-gradient(135deg,#7f8c8d,#5d6d7e)',
+];
+const INT_STYLE = {
+  'Low':      {bg:'#27ae6022',c:'#2ecc71'},
+  'Moderate': {bg:'#f39c1222',c:'#f39c12'},
+  'High':     {bg:'#e74c3c22',c:'#e74c3c'},
+  'Very High':{bg:'#c0392b22',c:'#ff6b6b'},
+};
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+/* ─── State ─── */
+const sel = {pref:null, goal:null, level:null};
+
+/* ─── Build selectors ─── */
+function buildGrid(id, items, key) {
+  const el = document.getElementById(id);
+  items.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'opt';
+    div.innerHTML = `
+      <img src="${d.img}" alt="${d.l}" loading="lazy">
+      <div class="opt-overlay">
+        <div class="opt-label">${d.l}</div>
+      </div>
+      <div class="opt-check">✓</div>`;
+    div.onclick = () => {
+      el.querySelectorAll('.opt').forEach(x => x.classList.remove('selected'));
+      div.classList.add('selected');
+      sel[key] = d.v;
+    };
+    el.appendChild(div);
+  });
+}
+buildGrid('pref-grid', PREFS,  'pref');
+buildGrid('goal-grid', GOALS,  'goal');
+buildGrid('level-grid',LEVELS, 'level');
+
+/* ─────────────────────────────────────────
+   EXERCISE DATABASE
+───────────────────────────────────────── */
+const DB = {
+  Gym: {
+    push: [
+      {n:'Barbell Bench Press',       note:'Control the descent; pause at chest'},
+      {n:'Incline Dumbbell Press',     note:'Keep elbows at 45° to protect shoulders'},
+      {n:'Overhead Shoulder Press',    note:'Brace your core; avoid arching lower back'},
+      {n:'Dumbbell Lateral Raises',    note:'Slight bend in elbow; raise to shoulder height'},
+      {n:'Cable Chest Fly',            note:'Keep slight bend in arms; squeeze at center'},
+      {n:'Dips',                       note:'Lean forward slightly to target chest'},
+      {n:'Tricep Pushdown',            note:'Keep elbows pinned at sides'},
+      {n:'Skull Crushers',             note:'Lower bar to forehead with control'},
+      {n:'Arnold Press',               note:'Rotate palms out as you press up'},
+      {n:'Close-Grip Bench Press',     note:'Elbows track close to body'},
+    ],
+    pull: [
+      {n:'Barbell Bent-Over Row',      note:'Hinge at hips; pull to lower chest'},
+      {n:'Lat Pulldown',               note:'Pull bar to upper chest; lean back slightly'},
+      {n:'Seated Cable Row',           note:'Sit tall; pull elbows past torso'},
+      {n:'Pull-Ups',                   note:'Full range of motion; dead hang at bottom'},
+      {n:'Single-Arm Dumbbell Row',    note:'Keep spine neutral; row to hip'},
+      {n:'Face Pulls',                 note:'Pull to forehead level; great for posture'},
+      {n:'Barbell Bicep Curl',         note:'No swinging; squeeze at top'},
+      {n:'Hammer Curls',               note:'Neutral grip; targets brachialis'},
+      {n:'Incline Dumbbell Curl',      note:'Full stretch at bottom for peak contraction'},
+      {n:'T-Bar Row',                  note:'Drive elbows back; chest against pad'},
+    ],
+    legs: [
+      {n:'Barbell Back Squat',         note:'Keep chest tall; knees track over toes'},
+      {n:'Romanian Deadlift',          note:'Hip hinge; feel hamstring stretch at bottom'},
+      {n:'Leg Press',                  note:'Don\'t lock knees at top; full range of motion'},
+      {n:'Bulgarian Split Squat',      note:'Front foot far enough to keep shin vertical'},
+      {n:'Leg Extension',              note:'Squeeze at top; controlled descent'},
+      {n:'Lying Leg Curl',             note:'Curl heels to glutes; hold briefly'},
+      {n:'Hip Thrust',                 note:'Drive hips up with glutes; chin tucked'},
+      {n:'Walking Lunges',             note:'Long stride; back knee nearly touches floor'},
+      {n:'Calf Raises',               note:'Full range; pause at top and bottom'},
+      {n:'Hack Squat',                 note:'Feet shoulder-width; deep as mobility allows'},
+    ],
+    core: [
+      {n:'Cable Crunch',               note:'Round spine; don\'t pull with neck'},
+      {n:'Hanging Leg Raise',          note:'Control the swing; avoid momentum'},
+      {n:'Ab Wheel Rollout',           note:'Brace core; don\'t let lower back sag'},
+      {n:'Russian Twist',              note:'Feet off floor for added challenge'},
+      {n:'Plank',                      note:'Squeeze glutes and core; breathe steadily', reps:'45–60 sec'},
+      {n:'Decline Sit-Up',             note:'Hands behind head; slow and controlled'},
+    ],
+    cardio: [
+      {n:'Treadmill Run',              note:'Moderate pace; keep heart rate in zone 2', reps:'15 min'},
+      {n:'Rowing Machine',             note:'Drive with legs first, then pull arms', reps:'10 min'},
+      {n:'Stationary Bike',            note:'High cadence, low resistance', reps:'15 min'},
+      {n:'Jump Rope',                  note:'Light on your feet; stay on toes', reps:'3 min'},
+      {n:'Stair Climber',              note:'Hold lightly; let legs do the work', reps:'10 min'},
+      {n:'Battle Ropes',               note:'Alternate waves; drive from hips', reps:'30 sec'},
+    ],
+    full: [
+      {n:'Deadlift',                   note:'Push floor away; hips and shoulders rise together'},
+      {n:'Power Clean',                note:'Explosive hip extension; catch in front rack'},
+      {n:'Barbell Thruster',           note:'Front squat into overhead press in one fluid motion'},
+      {n:'Kettlebell Swing',           note:'Hip hinge power; bell floats at shoulder height'},
+      {n:'Dumbbell Man-Maker',         note:'Push-up, row, clean, press — one fluid complex'},
+      {n:'Barbell Complex',            note:'6 movements back-to-back without setting bar down', reps:'5'},
+    ],
+  },
+
+  Home: {
+    push: [
+      {n:'Push-Ups',                   note:'Body straight from head to heels'},
+      {n:'Wide Push-Ups',              note:'Wider than shoulder-width; targets chest'},
+      {n:'Diamond Push-Ups',           note:'Hands form diamond; targets triceps'},
+      {n:'Pike Push-Ups',              note:'Hips high; targets shoulders'},
+      {n:'Decline Push-Ups',           note:'Feet elevated on chair; upper chest focus'},
+      {n:'Archer Push-Ups',            note:'Shift weight side to side; great progression'},
+      {n:'Chair Dips',                 note:'Dip until upper arms parallel; control up'},
+      {n:'Dumbbell Shoulder Press',    note:'If dumbbells available; press overhead'},
+    ],
+    pull: [
+      {n:'Door-Frame Row',             note:'Use a sturdy door; body diagonal'},
+      {n:'Towel Bicep Curl',           note:'Wrap towel around a door knob; curl up'},
+      {n:'Superman Hold',              note:'Lie face down; lift arms and legs', reps:'30 sec'},
+      {n:'Reverse Snow Angel',         note:'Face down; arms sweep from sides to overhead', reps:'12'},
+      {n:'Band Pull-Apart',            note:'Resistance band at chest height; squeeze shoulder blades'},
+      {n:'Dumbbell Row',               note:'Brace on chair; full range of motion'},
+    ],
+    legs: [
+      {n:'Bodyweight Squat',           note:'Sit back; chest tall; knees out'},
+      {n:'Reverse Lunges',             note:'Step back; front shin vertical'},
+      {n:'Glute Bridge',               note:'Drive hips up; squeeze at top', reps:'15–20'},
+      {n:'Single-Leg Glute Bridge',    note:'Keep hips level; work each side'},
+      {n:'Wall Sit',                   note:'90° bend in knees; hold steady', reps:'45 sec'},
+      {n:'Sumo Squat',                 note:'Wide stance; toes out; sit deep'},
+      {n:'Step-Ups',                   note:'Use a sturdy chair or step; drive through heel'},
+      {n:'Calf Raises',               note:'Full range; hold at top'},
+      {n:'Jump Squat',                 note:'Land soft; immediately descend into next rep'},
+    ],
+    core: [
+      {n:'Plank',                      note:'Squeeze everything; breathe steadily', reps:'45 sec'},
+      {n:'Mountain Climbers',          note:'Drive knees to chest alternately; keep hips down', reps:'40 sec'},
+      {n:'Bicycle Crunches',           note:'Full rotation; slow and deliberate'},
+      {n:'Dead Bug',                   note:'Lower opposite arm/leg; keep lower back flat'},
+      {n:'Hollow Body Hold',           note:'Press lower back into floor', reps:'30 sec'},
+      {n:'Side Plank',                 note:'Hips stacked; don\'t let them sag', reps:'30 sec each'},
+    ],
+    cardio: [
+      {n:'High Knees',                 note:'Drive knees to waist height; pump arms', reps:'40 sec'},
+      {n:'Burpees',                    note:'Full push-up at bottom; jump at top'},
+      {n:'Jump Rope (or Imaginary)',   note:'Light on feet; keep rhythm'},
+      {n:'Jumping Jacks',             note:'Full range; steady rhythm', reps:'60 sec'},
+      {n:'Skaters',                    note:'Leap side to side; touch opposite hand to foot', reps:'40 sec'},
+      {n:'Shadow Boxing',              note:'Punch combos with full hip rotation', reps:'60 sec'},
+    ],
+    full: [
+      {n:'Burpee',                     note:'Full push-up and jump; explosive'},
+      {n:'Dumbbell Complex',           note:'Squat, curl, press, row without setting weights down', reps:'5'},
+      {n:'Bear Crawl',                 note:'Hips low; opposite hand and foot move together', reps:'20 m'},
+    ],
+  },
+
+  Calisthenics: {
+    push: [
+      {n:'Push-Ups',                   note:'Perfect form first; progress to harder variations'},
+      {n:'Diamond Push-Ups',           note:'Elbows close; tricep emphasis'},
+      {n:'Archer Push-Ups',            note:'Great step toward one-arm push-up'},
+      {n:'Pike Push-Ups',              note:'Vertical push movement; shoulder strength'},
+      {n:'Handstand Hold',             note:'Against wall; build balance and shoulder endurance', reps:'20 sec'},
+      {n:'Dips (Parallel Bars)',       note:'Full range; avoid shrugging shoulders'},
+      {n:'One-Arm Push-Up Negatives',  note:'Lower on one arm; push up on two'},
+      {n:'Pseudo Planche Push-Ups',    note:'Lean forward; hands by hips'},
+    ],
+    pull: [
+      {n:'Pull-Ups',                   note:'Dead hang start; chin over bar'},
+      {n:'Chin-Ups',                   note:'Supinated grip; bicep emphasis'},
+      {n:'Negative Pull-Ups',          note:'Jump to top; lower in 5 seconds'},
+      {n:'Australian Pull-Ups',        note:'Feet on ground; body diagonal'},
+      {n:'L-Sit Pull-Ups',            note:'Keep legs horizontal throughout'},
+      {n:'Commando Pull-Ups',          note:'Alternate sides of bar each rep'},
+      {n:'Scapular Pull-Ups',          note:'Arms straight; elevate and depress shoulder blades'},
+    ],
+    legs: [
+      {n:'Bodyweight Squat',           note:'Deep as mobility allows; heels flat'},
+      {n:'Bulgarian Split Squat',      note:'Rear foot elevated; full depth'},
+      {n:'Pistol Squat Negatives',     note:'Lower slowly on one leg; use both to stand'},
+      {n:'Jump Squat',                 note:'Explosive; land quietly'},
+      {n:'Nordic Hamstring Curl',      note:'Partner holds feet; lower with control'},
+      {n:'Shrimp Squat',               note:'Hold rear foot; maintain balance'},
+      {n:'Broad Jump',                 note:'Max distance; land and absorb', reps:'5'},
+    ],
+    core: [
+      {n:'Hollow Body Hold',           note:'Press lower back into floor; point toes', reps:'30 sec'},
+      {n:'L-Sit Hold',                 note:'Arms straight; legs parallel to floor', reps:'10 sec'},
+      {n:'Toes-to-Bar',                note:'Controlled swing; avoid kipping'},
+      {n:'Dragon Flag Negatives',      note:'Lower body with control; use both arms'},
+      {n:'Planche Lean',               note:'Shoulders forward of wrists; build planche strength', reps:'20 sec'},
+      {n:'Front Lever Tuck Hold',      note:'Body horizontal; build to full front lever', reps:'10 sec'},
+    ],
+    full: [
+      {n:'Burpee',                     note:'Explosive; full range'},
+      {n:'Muscle-Up',                  note:'Explosive pull transitioning above bar'},
+      {n:'Human Flag Progression',     note:'Tuck or straddle version; build lat strength', reps:'5 sec hold'},
+    ],
+    cardio: [
+      {n:'Sprint Intervals',           note:'All-out for 20 sec; walk 40 sec', reps:'8 rounds'},
+      {n:'Jump Rope',                  note:'Double unders if possible', reps:'3 min'},
+      {n:'Box Jumps',                  note:'Land softly with bent knees'},
+    ],
+  },
+
+  Yoga: {
+    flow: [
+      {n:'Sun Salutation A',           note:'Link breath to movement; 5 cycles', reps:'5 rounds'},
+      {n:'Sun Salutation B',           note:'Add Warrior I; more dynamic', reps:'3 rounds'},
+      {n:'Vinyasa Flow',               note:'Chaturanga to Upward Dog to Downward Dog'},
+    ],
+    standing: [
+      {n:'Warrior I',                  note:'Back heel grounded; hips squared forward', reps:'60 sec each'},
+      {n:'Warrior II',                 note:'Front knee over ankle; arms extended', reps:'60 sec each'},
+      {n:'Warrior III',                note:'Balance on one leg; body parallel to floor', reps:'30 sec each'},
+      {n:'Triangle Pose',              note:'Reach long before tilting down', reps:'60 sec each'},
+      {n:'Crescent Lunge',             note:'Back knee hover; arms overhead', reps:'60 sec each'},
+      {n:'Chair Pose',                 note:'Sit back as if into a chair; chest lifted', reps:'45 sec'},
+    ],
+    balance: [
+      {n:'Tree Pose',                  note:'Find a focal point; press foot into thigh', reps:'45 sec each'},
+      {n:'Eagle Pose',                 note:'Cross arms and legs; sink the hips', reps:'45 sec each'},
+      {n:'Half Moon Pose',             note:'Open hip to ceiling; extend top arm up', reps:'30 sec each'},
+      {n:'Dancer\'s Pose',             note:'Kick foot back; reach opposite arm forward', reps:'30 sec each'},
+    ],
+    floor: [
+      {n:'Pigeon Pose',                note:'Square hips; front shin parallel to top of mat', reps:'90 sec each'},
+      {n:'Seated Forward Fold',        note:'Hinge at hips; reach for feet or shins', reps:'90 sec'},
+      {n:'Supine Twist',               note:'Draw knee across; both shoulders on mat', reps:'60 sec each'},
+      {n:'Bridge Pose',                note:'Press into feet; lift hips; optional wheel', reps:'60 sec'},
+      {n:'Happy Baby',                 note:'Hold outer feet; rock gently side to side', reps:'60 sec'},
+      {n:'Legs-Up-the-Wall',          note:'Restorative inversion; relax completely', reps:'3 min'},
+      {n:'Child\'s Pose',              note:'Rest and reset; breathe into back body', reps:'60 sec'},
+      {n:'Savasana',                   note:'Complete stillness; let body absorb practice', reps:'5 min'},
+    ],
+    core: [
+      {n:'Boat Pose',                  note:'Balance on sit bones; legs and chest lift', reps:'30 sec'},
+      {n:'Plank Pose',                 note:'Yogi push-up position; activate all muscles', reps:'45 sec'},
+      {n:'Side Plank (Vasisthasana)', note:'Stack feet or stagger; reach top arm up', reps:'30 sec each'},
+      {n:'Dolphin Pose',               note:'Forearms on mat; walk feet in; headstand prep', reps:'45 sec'},
+    ],
+    strength: [
+      {n:'Chaturanga Dandasana',       note:'Elbows at 90°; body in one line'},
+      {n:'Crow Pose',                  note:'Knees on upper arms; shift weight forward', reps:'10 sec hold'},
+      {n:'Side Crow',                  note:'Rotate; knees stack on one arm', reps:'5 sec each'},
+      {n:'Handstand Kick-Ups',         note:'Against wall; alternate legs; build balance'},
+    ],
+  },
+
+  Outdoor: {
+    run: [
+      {n:'Easy Run',                   note:'Conversational pace; nose breathing if possible', reps:'20 min'},
+      {n:'Tempo Run',                  note:'Comfortably hard; can speak in short sentences', reps:'20 min'},
+      {n:'Interval Sprints',           note:'Run hard for 200 m; walk 200 m recover', reps:'6 rounds'},
+      {n:'Hill Repeats',               note:'Sprint uphill; walk back down', reps:'8 rounds'},
+      {n:'Long Slow Distance Run',     note:'Easy effort; build aerobic base', reps:'35 min'},
+      {n:'Fartlek Run',                note:'Mix easy, moderate, and fast efforts freely', reps:'25 min'},
+    ],
+    strength: [
+      {n:'Park Bench Push-Ups',        note:'Hands on bench; incline angle'},
+      {n:'Park Bench Dips',            note:'Hands on bench; dip until elbows 90°'},
+      {n:'Pull-Ups (Park Bar)',        note:'Full range; dead hang start'},
+      {n:'Step-Ups (Bench)',           note:'Drive through heel; alternate legs'},
+      {n:'Box Jumps (Park Bench)',     note:'Land soft; step back down'},
+      {n:'Incline Push-Ups (Bench)',   note:'Decline version targets upper chest'},
+    ],
+    legs: [
+      {n:'Hill Sprints',               note:'Explosive drive uphill; walk back down', reps:'6'},
+      {n:'Lateral Bounds',             note:'Jump side to side; absorb landing', reps:'20'},
+      {n:'Single-Leg Hops',            note:'Hop forward on one leg; 10 each side', reps:'10 each'},
+      {n:'Walking Lunges',             note:'Long stride; squeeze glutes at top', reps:'20'},
+    ],
+    core: [
+      {n:'Plank',                      note:'Hold on grass; perfect alignment', reps:'45 sec'},
+      {n:'V-Ups',                      note:'Raise legs and torso simultaneously'},
+      {n:'Mountain Climbers',          note:'Drive knees to chest; keep hips down', reps:'40 sec'},
+      {n:'Sit-Ups',                    note:'Hands behind head; full range'},
+    ],
+    cardio: [
+      {n:'Jump Rope',                  note:'Light on feet; use wrists to spin', reps:'3 min'},
+      {n:'Jumping Jacks',             note:'Full range; consistent rhythm', reps:'60 sec'},
+      {n:'Burpees',                    note:'Full push-up and jump; all-out effort'},
+      {n:'High Knees',                 note:'Drive knees to hip height; pump arms', reps:'40 sec'},
+    ],
+  },
+};
+
+// Mixed = random blend of Gym + Home
+DB.Mixed = {
+  push:    [...DB.Gym.push.slice(0,5),   ...DB.Home.push.slice(0,5)],
+  pull:    [...DB.Gym.pull.slice(0,5),   ...DB.Home.pull.slice(0,4)],
+  legs:    [...DB.Gym.legs.slice(0,5),   ...DB.Home.legs.slice(0,5)],
+  core:    [...DB.Gym.core,              ...DB.Home.core.slice(0,4)],
+  cardio:  [...DB.Gym.cardio.slice(0,3), ...DB.Home.cardio.slice(0,3)],
+  full:    [...DB.Gym.full,              ...DB.Home.full],
+};
+
+/* ─────────────────────────────────────────
+   WEEKLY SPLITS  (by goal)
+   Each item: {label, type, intensity, is_rest?}
+───────────────────────────────────────── */
+const SPLITS = {
+  'Weight Loss': [
+    {label:'HIIT + Upper Body',     type:'hiit_upper',   intensity:'High'},
+    {label:'Cardio Blast',           type:'cardio',       intensity:'Moderate'},
+    {label:'HIIT + Lower Body',     type:'hiit_lower',   intensity:'High'},
+    {label:'Active Recovery',        type:'active',       intensity:'Low'},
+    {label:'Full Body Circuit',      type:'circuit',      intensity:'Very High'},
+    {label:'Cardio + Core',          type:'cardio_core',  intensity:'Moderate'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+  ],
+  'Muscle Building': [
+    {label:'Chest & Triceps',        type:'push',         intensity:'High'},
+    {label:'Back & Biceps',          type:'pull',         intensity:'High'},
+    {label:'Legs & Glutes',          type:'legs',         intensity:'High'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+    {label:'Shoulders & Arms',       type:'shoulders',    intensity:'Moderate'},
+    {label:'Full Body Compound',     type:'full',         intensity:'High'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+  ],
+  'Endurance': [
+    {label:'Easy Steady State',      type:'cardio',       intensity:'Low'},
+    {label:'Interval Training',      type:'intervals',    intensity:'Very High'},
+    {label:'Cross Training',         type:'cross',        intensity:'Moderate'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+    {label:'Tempo Session',          type:'tempo',        intensity:'High'},
+    {label:'Long Session',           type:'long',         intensity:'Moderate'},
+    {label:'Active Recovery',        type:'active',       intensity:'Low'},
+  ],
+  'Flexibility': [
+    {label:'Full Body Flow',         type:'flow',         intensity:'Low'},
+    {label:'Hip & Hamstring Focus',  type:'hips',         intensity:'Low'},
+    {label:'Upper Body & Shoulders', type:'upper_flex',   intensity:'Low'},
+    {label:'Core & Balance',         type:'core_balance', intensity:'Low'},
+    {label:'Lower Body Deep Stretch',type:'lower_flex',   intensity:'Low'},
+    {label:'Restorative Yoga',       type:'restore',      intensity:'Low'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+  ],
+  'Strength': [
+    {label:'Lower Body Power',       type:'legs',         intensity:'Very High'},
+    {label:'Upper Body Push',        type:'push',         intensity:'Very High'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+    {label:'Upper Body Pull',        type:'pull',         intensity:'Very High'},
+    {label:'Legs — Olympic Focus',   type:'legs',         intensity:'High'},
+    {label:'Accessory & Core',       type:'accessory',    intensity:'Moderate'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+  ],
+  'General Fitness': [
+    {label:'Full Body A',            type:'full_body_a',  intensity:'Moderate'},
+    {label:'Cardio',                 type:'cardio',       intensity:'Moderate'},
+    {label:'Full Body B',            type:'full_body_b',  intensity:'Moderate'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+    {label:'Full Body C',            type:'full_body_c',  intensity:'Moderate'},
+    {label:'Active Recovery',        type:'active',       intensity:'Low'},
+    {label:'Rest Day',               type:'rest',         intensity:null, is_rest:true},
+  ],
+};
+
+/* ─────────────────────────────────────────
+   TRAINING PARAMS  (goal → level → {sets, reps, rest})
+───────────────────────────────────────── */
+const PARAMS = {
+  'Weight Loss': {
+    Beginner:     {sets:3, reps:'12–15', rest:'45 sec'},
+    Intermediate: {sets:4, reps:'15–20', rest:'30 sec'},
+    Advanced:     {sets:4, reps:'20–25', rest:'20 sec'},
+  },
+  'Muscle Building': {
+    Beginner:     {sets:3, reps:'10–12', rest:'90 sec'},
+    Intermediate: {sets:4, reps:'8–12',  rest:'75 sec'},
+    Advanced:     {sets:5, reps:'6–10',  rest:'60 sec'},
+  },
+  'Endurance': {
+    Beginner:     {sets:2, reps:'15–20', rest:'30 sec'},
+    Intermediate: {sets:3, reps:'20–25', rest:'20 sec'},
+    Advanced:     {sets:3, reps:'25–30', rest:'15 sec'},
+  },
+  'Flexibility': {
+    Beginner:     {sets:2, reps:'30 sec hold', rest:'15 sec'},
+    Intermediate: {sets:2, reps:'45 sec hold', rest:'10 sec'},
+    Advanced:     {sets:3, reps:'60 sec hold', rest:'10 sec'},
+  },
+  'Strength': {
+    Beginner:     {sets:3, reps:'6–8',  rest:'2 min'},
+    Intermediate: {sets:4, reps:'4–6',  rest:'3 min'},
+    Advanced:     {sets:5, reps:'3–5',  rest:'3–4 min'},
+  },
+  'General Fitness': {
+    Beginner:     {sets:3, reps:'10–12', rest:'60 sec'},
+    Intermediate: {sets:3, reps:'12–15', rest:'45 sec'},
+    Advanced:     {sets:4, reps:'12–15', rest:'45 sec'},
+  },
+};
+
+/* ─────────────────────────────────────────
+   DURATION  (day type + level → string)
+───────────────────────────────────────── */
+function getDuration(type, level) {
+  const base = {
+    hiit_upper:'35–45 min', hiit_lower:'35–45 min', cardio:'30–40 min',
+    active:'20–30 min', circuit:'40–50 min', cardio_core:'35–45 min',
+    push:'45–60 min', pull:'45–60 min', legs:'50–65 min', shoulders:'40–50 min',
+    full:'50–60 min', intervals:'30–40 min', cross:'35–45 min',
+    tempo:'30–40 min', long:'45–60 min', flow:'40–50 min',
+    hips:'35–45 min', upper_flex:'35–45 min', core_balance:'35–45 min',
+    lower_flex:'35–45 min', restore:'40–50 min', accessory:'40–50 min',
+    full_body_a:'40–50 min', full_body_b:'40–50 min', full_body_c:'40–50 min',
+  };
+  return base[type] || '40–50 min';
+}
+
+/* ─────────────────────────────────────────
+   EXERCISE SELECTION  by pref + day type
+───────────────────────────────────────── */
+function pick(arr, n) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+function yogaExercises(type, level) {
+  const Y = DB.Yoga;
+  const sets = level === 'Beginner' ? 1 : level === 'Intermediate' ? 2 : 3;
+  let pool = [];
+  if (type === 'flow')         pool = [...Y.flow, ...Y.standing];
+  else if (type === 'hips')    pool = [...Y.floor.slice(0,4), ...Y.standing.slice(0,3)];
+  else if (type === 'upper_flex') pool = [...Y.strength, ...Y.balance];
+  else if (type === 'core_balance') pool = [...Y.core, ...Y.balance];
+  else if (type === 'lower_flex') pool = [...Y.floor, ...Y.standing.slice(2)];
+  else if (type === 'restore') pool = [...Y.floor.slice(3), ...Y.floor.slice(3)];
+  else pool = [...Y.flow, ...Y.standing, ...Y.floor];
+
+  return pick(pool, 6).map(e => ({
+    name: e.n, sets, reps: e.reps || '60 sec hold', rest: '10 sec', notes: e.note,
+  }));
+}
+
+function outdoorExercises(type, parms) {
+  const O = DB.Outdoor;
+  let pool = [];
+  if (type === 'cardio' || type === 'long')   pool = O.run;
+  else if (type === 'intervals')              pool = [...O.run.slice(2,4), ...O.cardio];
+  else if (type === 'tempo')                  pool = [...O.run.slice(1,3), ...O.run.slice(4)];
+  else if (type === 'cross')                  pool = [...O.strength, ...O.legs, ...O.cardio];
+  else if (type === 'active')                 pool = [O.run[0], ...O.strength.slice(0,3)];
+  else if (type === 'hiit_upper')             pool = [...O.strength.slice(0,5), ...O.cardio];
+  else if (type === 'hiit_lower')             pool = [...O.legs, ...O.cardio];
+  else if (type === 'circuit' || type === 'cardio_core') pool = [...O.strength, ...O.core, ...O.cardio];
+  else if (type === 'push')                   pool = [...O.strength.slice(0,3), ...O.cardio];
+  else if (type === 'pull')                   pool = [O.strength[2], ...O.strength.slice(3)];
+  else if (type === 'legs')                   pool = O.legs;
+  else if (type === 'full' || type.startsWith('full_body')) pool = [...O.strength, ...O.legs, ...O.cardio];
+  else                                         pool = [...O.cardio, ...O.core];
+
+  return pick(pool, 5).map(e => ({
+    name: e.n, sets: parms.sets, reps: e.reps || parms.reps, rest: parms.rest, notes: e.note,
+  }));
+}
+
+function standardExercises(pref, type, parms, count = 5) {
+  const pool_map = {
+    push:       ['push'],
+    pull:       ['pull'],
+    legs:       ['legs'],
+    shoulders:  ['push', 'pull'],
+    full:       ['full','push','pull','legs'],
+    hiit_upper: ['push','pull','core','cardio'],
+    hiit_lower: ['legs','core','cardio'],
+    cardio:     ['cardio','core'],
+    cardio_core:['cardio','core'],
+    circuit:    ['push','pull','legs','cardio'],
+    cross:      ['full','core','cardio'],
+    active:     ['core','cardio'],
+    accessory:  ['core','pull'],
+    full_body_a:['push','legs','core'],
+    full_body_b:['pull','legs','core'],
+    full_body_c:['push','pull','legs'],
+    intervals:  ['cardio'],
+    tempo:      ['cardio'],
+    long:       ['cardio'],
+    flow:       ['core','push'],
+    hips:       ['legs','core'],
+    upper_flex: ['push','pull'],
+    core_balance:['core'],
+    lower_flex: ['legs'],
+    restore:    ['core'],
+  };
+
+  const groups = pool_map[type] || ['full'];
+  const P = DB[pref] || DB.Gym;
+
+  let pool = [];
+  groups.forEach(g => { if (P[g]) pool.push(...P[g]); });
+  if (!pool.length) pool = P.full || P.push || [];
+
+  return pick(pool, count).map(e => ({
+    name: e.n, sets: parms.sets, reps: e.reps || parms.reps, rest: parms.rest, notes: e.note,
+  }));
+}
+
+function getExercises(pref, type, goal, level) {
+  const parms = PARAMS[goal]?.[level] || {sets:3, reps:'10–12', rest:'60 sec'};
+  if (pref === 'Yoga')    return yogaExercises(type, level);
+  if (pref === 'Outdoor') return outdoorExercises(type, parms);
+  return standardExercises(pref, type, parms);
+}
+
+/* ─────────────────────────────────────────
+   WARM-UPS & COOL-DOWNS
+───────────────────────────────────────── */
+const WARMUPS = {
+  default:   '5 min light cardio + dynamic leg swings, arm circles, and hip rotations',
+  push:      '5 min walk/jog + arm circles, shoulder rolls, and band pull-aparts',
+  pull:      '5 min light cardio + shoulder circles, cat-cow stretches, and band dislocates',
+  legs:      '5 min walk + leg swings, hip circles, bodyweight squats, and ankle rotations',
+  cardio:    '5 min easy pace build-up with dynamic stretches',
+  yoga:      '3 min of deep breathing in Child\'s Pose, then Cat-Cow flow x 5',
+  strength:  '8 min mobility work: hip flexors, thoracic rotation, and activation sets',
+  circuit:   '5 min jumping jacks, high knees, and arm swings',
+};
+
+const COOLDOWNS = {
+  default:   '5 min light walk + static stretches held 30 sec each for major muscles worked',
+  push:      '5 min stretch: chest doorway stretch, overhead tricep, cross-body shoulder',
+  pull:      '5 min stretch: lat hang, bicep wall stretch, child\'s pose',
+  legs:      '5 min stretch: quad, hamstring, hip flexor, and calf holds (30 sec each)',
+  cardio:    '5 min easy pace cool-down + standing quad and calf stretches',
+  yoga:      'Savasana — lie flat, close eyes, let body absorb the practice (3–5 min)',
+  strength:  '5 min static stretch of all major muscle groups; foam roll if available',
+};
+
+function getWarmup(type) {
+  if (['push','shoulders'].includes(type)) return WARMUPS.push;
+  if (type === 'pull') return WARMUPS.pull;
+  if (type === 'legs') return WARMUPS.legs;
+  if (['cardio','intervals','tempo','long'].includes(type)) return WARMUPS.cardio;
+  if (['flow','hips','upper_flex','core_balance','lower_flex','restore'].includes(type)) return WARMUPS.yoga;
+  if (type === 'circuit' || type.startsWith('hiit')) return WARMUPS.circuit;
+  if (type.includes('full')) return WARMUPS.default;
+  return WARMUPS.default;
+}
+
+function getCooldown(type) {
+  if (['push','shoulders'].includes(type)) return COOLDOWNS.push;
+  if (type === 'pull') return COOLDOWNS.pull;
+  if (type === 'legs') return COOLDOWNS.legs;
+  if (['cardio','intervals','tempo','long','cardio_core'].includes(type)) return COOLDOWNS.cardio;
+  if (['flow','hips','upper_flex','core_balance','lower_flex','restore'].includes(type)) return COOLDOWNS.yoga;
+  return COOLDOWNS.default;
+}
+
+/* ─────────────────────────────────────────
+   TIPS
+───────────────────────────────────────── */
+const TIPS = {
+  hiit_upper:  'Keep rest periods short — the metabolic effect is the goal today.',
+  hiit_lower:  'Your lower body burns more calories; push hard on every set.',
+  cardio:      'Stay in zone 2 — you should be able to hold a conversation.',
+  active:      'Active recovery boosts blood flow and speeds up muscle repair.',
+  circuit:     'Minimize rest between exercises; maximize calorie burn.',
+  cardio_core: 'A strong core supports every other movement — treat it as a priority.',
+  push:        'Progressive overload: add 1 rep or 2.5 kg each week you hit all reps.',
+  pull:        'Focus on squeezing the target muscle — not just moving the weight.',
+  legs:        'Leg day builds the most muscle and burns the most calories. Don\'t skip it!',
+  shoulders:   'Rotate your warm-up movements to maintain healthy shoulder joints.',
+  full:        'Compound movements recruit the most muscle fibres — stay present.',
+  intervals:   'True intervals require real effort — give 90–95% on the work intervals.',
+  cross:       'Cross training reduces injury risk and builds balanced fitness.',
+  tempo:       'Tempo pace teaches your body to sustain speed — control your breathing.',
+  long:        'Run slow to run fast. Long slow sessions build your aerobic engine.',
+  flow:        'Move with breath, not just body — inhale to lengthen, exhale to deepen.',
+  hips:        'Hip mobility impacts your whole kinetic chain. Take your time here.',
+  upper_flex:  'Relax into each stretch — tension is the enemy of flexibility.',
+  core_balance:'Balance challenges your nervous system, not just muscles. Stay focused.',
+  lower_flex:  'Consistent flexibility work beats occasional deep sessions.',
+  restore:     'Restorative yoga downregulates the nervous system — be still and breathe.',
+  accessory:   'Address your weak links today; they limit your main lifts.',
+  full_body_a: 'Focus on quality reps, not speed. Master the movement pattern.',
+  full_body_b: 'Pull movements balance the pushing you did on Monday.',
+  full_body_c: 'Finish strong — this is your last workout of the week.',
+  rest:        '',
+};
+
+const NUTRITION = {
+  'Weight Loss':    'Eat in a moderate calorie deficit (~300–500 kcal/day). Prioritise protein (1.6–2 g per kg bodyweight) to preserve muscle while losing fat.',
+  'Muscle Building':'Eat in a slight surplus (~250–400 kcal above maintenance). Hit 1.6–2.2 g of protein per kg bodyweight daily, and time a meal with carbs and protein within 2 hours of training.',
+  'Endurance':      'Fuel long sessions with complex carbohydrates before, and replenish glycogen with carbs + protein within 30 min after. Stay well hydrated — even 2% dehydration hurts performance.',
+  'Flexibility':    'Anti-inflammatory foods (oily fish, berries, leafy greens, turmeric) support joint and connective tissue health. Stay hydrated throughout the day.',
+  'Strength':       'Eat at maintenance or a small surplus. High protein (1.8–2.5 g/kg) is key. Eat carbs around your workout to fuel heavy lifts and aid recovery.',
+  'General Fitness':'Aim for balanced whole-food meals: lean protein, complex carbs, healthy fats, and plenty of vegetables. Hydrate well — 2–3 L of water daily.',
+};
+
+const RECOVERY = {
+  'Weight Loss':    'Aim for 7–9 hours of sleep. Poor sleep elevates cortisol, which promotes fat storage and muscle breakdown. Don\'t cut sleep to create more time for training.',
+  'Muscle Building':'Muscles grow during sleep, not during workouts. 7–9 hours is non-negotiable. Consider foam rolling and contrast showers to accelerate recovery.',
+  'Endurance':      'Prioritise sleep for glycogen replenishment and tissue repair. Light stretching and walking on rest days aids recovery without adding stress.',
+  'Flexibility':    'Consistency beats intensity — short daily sessions outperform long occasional ones. Sleep is when collagen repairs, making it essential for flexibility gains.',
+  'Strength':       '7–9 hours of sleep supports testosterone and growth hormone production — both critical for strength. Take rest days seriously; they\'re where adaptation happens.',
+  'General Fitness':'Balance is key: work hard on active days, rest fully on off days. Listen to your body — persistent fatigue is a signal to ease off.',
+};
+
+const TITLES = {
+  'Weight Loss': {
+    Gym:          'The Fat-Furnace Program',
+    Home:         'Home HIIT Fat Burner',
+    Calisthenics: 'Bodyweight Shred',
+    Yoga:         'Flow & Burn Yoga Plan',
+    Outdoor:      'Outdoor Blitz Plan',
+    Mixed:        'Total-Body Fat Attack',
+  },
+  'Muscle Building': {
+    Gym:          'Classic Hypertrophy Split',
+    Home:         'Home Muscle Builder',
+    Calisthenics: 'Calisthenics Mass Plan',
+    Yoga:         'Power Yoga Strength Plan',
+    Outdoor:      'Outdoor Muscle Program',
+    Mixed:        'Hybrid Muscle Builder',
+  },
+  'Endurance': {
+    Gym:          'Machine Endurance Program',
+    Home:         'Home Cardio Engine',
+    Calisthenics: 'Bodyweight Conditioning',
+    Yoga:         'Breath & Endurance Flow',
+    Outdoor:      'Outdoor Endurance Builder',
+    Mixed:        'All-Terrain Endurance Plan',
+  },
+  'Flexibility': {
+    Gym:          'Mobility & Flexibility Program',
+    Home:         'Home Flexibility Routine',
+    Calisthenics: 'Movement Freedom Plan',
+    Yoga:         '7-Day Flexibility Journey',
+    Outdoor:      'Outdoor Stretch & Move Plan',
+    Mixed:        'Full-Body Mobility Program',
+  },
+  'Strength': {
+    Gym:          'Progressive Overload Program',
+    Home:         'Home Strength Builder',
+    Calisthenics: 'Calisthenics Strength Ladder',
+    Yoga:         'Yoga Strength & Power Plan',
+    Outdoor:      'Functional Strength Outdoor Plan',
+    Mixed:        'Hybrid Strength Program',
+  },
+  'General Fitness': {
+    Gym:          'All-Round Fitness Program',
+    Home:         'Home Wellness Routine',
+    Calisthenics: 'Calisthenics Starter Plan',
+    Yoga:         'Yoga & Fitness Blend',
+    Outdoor:      'Outdoor Fitness Circuit',
+    Mixed:        '7-Day Total Fitness Plan',
+  },
+};
+
+const OVERVIEWS = {
+  'Weight Loss':     (p,l) => `A ${l.toLowerCase()}-level fat-loss plan using ${p.toLowerCase()}-style training. The week alternates high-intensity sessions with steady cardio to maximise calorie burn while preserving muscle. Active recovery days keep you moving without overtaxing your system.`,
+  'Muscle Building': (p,l) => `A ${l.toLowerCase()}-level hypertrophy plan built around ${p.toLowerCase()} training. Each session targets a specific muscle group with enough volume to stimulate growth, while two rest days give your body the recovery it needs to build muscle effectively.`,
+  'Endurance':       (p,l) => `A ${l.toLowerCase()}-level endurance plan using ${p.toLowerCase()} training. The week balances easy aerobic sessions, intervals, tempo work, and a long session to systematically build your cardiovascular engine and stamina.`,
+  'Flexibility':     (p,l) => `A ${l.toLowerCase()}-level flexibility plan using ${p.toLowerCase()} techniques. Each day targets different areas of the body with targeted holds and flows, building genuine mobility and body awareness over the week.`,
+  'Strength':        (p,l) => `A ${l.toLowerCase()}-level strength programme centred on ${p.toLowerCase()} training. Heavy compound lifts are performed with ample rest to drive maximal strength adaptations, while accessory work addresses weak links and reduces injury risk.`,
+  'General Fitness': (p,l) => `A ${l.toLowerCase()}-level balanced fitness plan using ${p.toLowerCase()} training. Full-body sessions three times a week build functional strength and fitness, while cardio and active recovery sessions round out your overall health.`,
+};
+
+/* ─────────────────────────────────────────
+   PLAN BUILDER
+───────────────────────────────────────── */
+function buildPlan(pref, goal, level) {
+  const split = SPLITS[goal];
+  const title = TITLES[goal]?.[pref] || 'Your Custom 7-Day Plan';
+  const overview = OVERVIEWS[goal]?.(pref, level) || '';
+
+  const days = split.map((d, i) => {
+    if (d.is_rest) return {
+      day_number: i + 1, day_name: DAYS[i],
+      workout_type: 'Rest Day', is_rest_day: true,
+      duration: null, intensity: null,
+      warm_up: null, exercises: [], cool_down: null, tips: null,
+    };
+
+    const exercises = getExercises(pref, d.type, goal, level);
+    return {
+      day_number: i + 1,
+      day_name: DAYS[i],
+      workout_type: d.label,
+      is_rest_day: false,
+      duration: getDuration(d.type, level),
+      intensity: d.intensity,
+      warm_up: getWarmup(d.type),
+      exercises,
+      cool_down: getCooldown(d.type),
+      tips: TIPS[d.type] || '',
+    };
+  });
+
+  return {
+    plan_title: title,
+    overview,
+    days,
+    nutrition_tip: NUTRITION[goal],
+    recovery_advice: RECOVERY[goal],
+  };
+}
+
+/* ─────────────────────────────────────────
+   RENDER
+───────────────────────────────────────── */
+function renderPlan(plan) {
+  const IC = {
+    'Low':      {bg:'#27ae6022',c:'#2ecc71'},
+    'Moderate': {bg:'#f39c1222',c:'#f39c12'},
+    'High':     {bg:'#e74c3c22',c:'#e74c3c'},
+    'Very High':{bg:'#c0392b22',c:'#ff6b6b'},
+  };
+
+  let html = `
+    <div class="plan-intro">
+      <div class="plan-title-text">${h(plan.plan_title)}</div>
+      <p class="plan-overview-text">${h(plan.overview)}</p>
+    </div>
+    <div class="days-grid">
+  `;
+
+  plan.days.forEach((day, i) => {
+    const grad = DAY_COLORS[i % DAY_COLORS.length];
+    if (day.is_rest_day) {
+      html += `
+        <div class="day-card">
+          <div class="day-hd" style="background:${grad}">
+            <div>
+              <div class="day-tag">${h(day.day_name)}</div>
+              <div class="day-focus-label">Rest & Recover 😴</div>
+            </div>
+          </div>
+          <div class="day-bd">
+            <div class="rest-inner">
+              <div class="rest-icon">🛌</div>
+              <p>Allow your muscles to repair and grow. Light walking, stretching, or a gentle walk is perfectly fine.</p>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const ic = IC[day.intensity] || {bg:'#88888822',c:'#888'};
+    const ytIcon = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>`;
+
+    const exHtml = day.exercises.map(ex => {
+      const query = encodeURIComponent(ex.name + ' exercise tutorial');
+      const ytUrl = `https://www.youtube.com/results?search_query=${query}`;
+      return `
+      <div class="ex-row">
+        <div class="ex-name-row">
+          <div class="ex-name">${h(ex.name)}</div>
+          <a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener">${ytIcon} Watch</a>
+        </div>
+        <div class="ex-stats">
+          ${ex.sets  ? `<span>🔁 ${ex.sets} sets</span>` : ''}
+          ${ex.reps  ? `<span>✳️ ${h(ex.reps)}</span>` : ''}
+          ${ex.rest  ? `<span>⏱ ${h(ex.rest)} rest</span>` : ''}
+        </div>
+        ${ex.notes ? `<div class="ex-note">${h(ex.notes)}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    html += `
+      <div class="day-card">
+        <div class="day-hd" style="background:${grad}">
+          <div>
+            <div class="day-tag">${h(day.day_name)}</div>
+            <div class="day-focus-label">${h(day.workout_type)}</div>
+          </div>
+          <div class="day-meta-col">
+            <div class="day-duration">${h(day.duration || '')}</div>
+            <div class="intensity-pill" style="background:${ic.bg};color:${ic.c}">${h(day.intensity || '')}</div>
+          </div>
+        </div>
+        <div class="day-bd">
+          ${day.warm_up ? `<div class="mini-label">Warm-Up</div><div class="phase-box">🔥 ${h(day.warm_up)}</div>` : ''}
+          <div class="mini-label">Exercises</div>
+          <div class="ex-list">${exHtml}</div>
+          ${day.cool_down ? `<div class="mini-label">Cool-Down</div><div class="phase-box">❄️ ${h(day.cool_down)}</div>` : ''}
+          ${day.tips ? `<div class="day-tip">💡 ${h(day.tips)}</div>` : ''}
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+
+  if (plan.nutrition_tip || plan.recovery_advice) {
+    html += `<div class="bottom-tips">
+      ${plan.nutrition_tip    ? `<div class="tip-box"><h3>🥗 Nutrition</h3><p>${h(plan.nutrition_tip)}</p></div>` : ''}
+      ${plan.recovery_advice  ? `<div class="tip-box"><h3>😴 Recovery</h3><p>${h(plan.recovery_advice)}</p></div>` : ''}
+    </div>`;
+  }
+
+  document.getElementById('plan-out').innerHTML = html;
+}
+
+function h(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────────────────────────────────────
+   CONTROL FLOW
+───────────────────────────────────────── */
+function show(id) {
+  ['form-screen','loading-screen','results-screen'].forEach(s => {
+    document.getElementById(s).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function showError(msg) {
+  const el = document.getElementById('form-error');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+async function generatePlan() {
+  if (!sel.pref || !sel.goal || !sel.level) {
+    showError('Please select one option from each category above.');
+    return;
+  }
+  show('loading-screen');
+  // Short delay for UX polish
+  await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
+  const plan = buildPlan(sel.pref, sel.goal, sel.level);
+  renderPlan(plan);
+  show('results-screen');
+  window.scrollTo(0, 0);
+}
+
+function goBack() { show('form-screen'); window.scrollTo(0,0); }
+
+function regen() {
+  if (sel.pref && sel.goal && sel.level) generatePlan();
+}
+</script>
+</body>
+</html>
