@@ -3,26 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Workout Plan Generator</title>
+  <title>PIP-BOY 3000 // TRAINING PROTOCOL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0b0b18;
-      --card: #1a1a2e;
-      --card2: #20203a;
-      --border: rgba(255,255,255,0.07);
-      --text: #e2e2f0;
-      --muted: #7878a0;
-      --accent: #7c6ff7;
+      --bg: #050a05;
+      --card: #071007;
+      --card2: #0b180b;
+      --border: #1a3f1a;
+      --border-hi: #2e7a2e;
+      --text: #5aff8a;
+      --text-hi: #8fffb0;
+      --muted: #2e7040;
+      --dim: #1a4a28;
+      --accent: #5aff8a;
+      --glow: rgba(90,255,138,0.35);
+      --glow-hi: rgba(90,255,138,0.65);
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.6;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* CRT scanlines */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent 0px, transparent 3px,
+        rgba(0,0,0,0.13) 3px, rgba(0,0,0,0.13) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* CRT vignette */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65) 100%);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    @keyframes flicker {
+      0%,90%,100%{opacity:1} 92%{opacity:.96} 94%{opacity:1} 96%{opacity:.94} 98%{opacity:1}
     }
 
     .screen { display: none; }
@@ -31,53 +65,65 @@
     /* Header */
     .page-header {
       text-align: center;
-      padding: 3.5rem 1rem 2rem;
+      padding: 2.5rem 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-hi);
+      margin-bottom: 2rem;
+    }
+    .page-header::before {
+      content: '// PIP-BOY 3000 MK IV  //  ROBCO INDUSTRIES //';
+      display: block;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 4px;
+      margin-bottom: 0.6rem;
     }
     .page-header h1 {
-      font-size: clamp(2rem, 5vw, 3rem);
-      font-weight: 900;
-      background: linear-gradient(135deg, #7c6ff7, #ff6b8b);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.5px;
+      font-family: 'VT323', monospace;
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      font-weight: normal;
+      color: var(--text-hi);
+      text-shadow: 0 0 18px var(--glow-hi), 0 0 40px var(--glow);
+      letter-spacing: 6px;
+      animation: flicker 9s infinite;
       margin-bottom: 0.4rem;
     }
-    .page-header p { color: var(--muted); font-size: 1.05rem; }
+    .page-header p { color: var(--muted); font-size: 0.72rem; letter-spacing: 3px; }
+    .page-header p::before { content: '> '; }
 
     /* Form */
     .form-wrap { max-width: 820px; margin: 0 auto; padding: 0 1.5rem 5rem; }
 
     .fieldset-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 4px;
       color: var(--muted);
-      margin-bottom: 0.9rem;
+      margin-bottom: 0.8rem;
+      border-left: 2px solid var(--accent);
+      padding-left: 0.75rem;
+      text-shadow: 0 0 8px var(--glow);
     }
 
     .option-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 2.2rem;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 2rem;
     }
     .opt {
       position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 3px solid transparent;
+      border: 2px solid var(--border);
       cursor: pointer;
       aspect-ratio: 3 / 2;
-      background: var(--card2);
-      transition: border-color .18s, transform .14s, box-shadow .18s;
+      background: var(--card);
+      transition: border-color .1s, box-shadow .1s;
       user-select: none;
+      overflow: hidden;
+      border-radius: 0;
     }
-    .opt:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .opt:hover { border-color: var(--border-hi); box-shadow: 0 0 14px var(--glow); }
     .opt.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(124,111,247,0.35);
+      box-shadow: 0 0 20px var(--glow), inset 0 0 12px rgba(90,255,138,0.06);
     }
     .opt img {
       width: 100%; height: 100%;
@@ -87,49 +133,55 @@
     .opt:hover img { transform: scale(1.06); }
     .opt-overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.15) 55%, transparent 100%);
+      background: linear-gradient(to top, rgba(0,8,0,0.9) 0%, rgba(0,8,0,0.25) 50%, transparent 100%);
       display: flex; align-items: flex-end;
-      padding: 0.7rem 0.75rem;
+      padding: 0.6rem 0.7rem;
     }
     .opt-label {
-      color: #fff; font-weight: 700;
-      font-size: 0.88rem; line-height: 1.2;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      color: var(--text-hi);
+      font-size: 0.8rem; line-height: 1.2;
+      text-shadow: 0 0 10px var(--glow-hi);
+      letter-spacing: 2px;
     }
     .opt-check {
-      position: absolute; top: 0.45rem; right: 0.45rem;
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--accent); color: #fff;
-      font-size: 0.72rem; font-weight: 900;
+      position: absolute; top: 0.35rem; right: 0.35rem;
+      width: 18px; height: 18px;
+      background: var(--accent); color: #030803;
+      font-size: 0.65rem; font-weight: 900;
       display: none; align-items: center; justify-content: center;
+      border-radius: 0;
     }
     .opt.selected .opt-check { display: flex; }
 
     .gen-btn {
       width: 100%;
-      padding: 1.1rem;
-      background: linear-gradient(135deg, #7c6ff7, #ff6b8b);
-      border: none;
-      border-radius: 13px;
-      color: #fff;
-      font-size: 1.05rem;
-      font-weight: 700;
+      padding: 1rem;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--text-hi);
+      font-family: 'VT323', monospace;
+      font-size: 1.6rem;
+      letter-spacing: 5px;
       cursor: pointer;
-      letter-spacing: 0.5px;
-      transition: transform .14s, box-shadow .14s;
+      text-shadow: 0 0 14px var(--glow-hi);
+      transition: background .1s, box-shadow .1s;
     }
-    .gen-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(124,111,247,.4); }
+    .gen-btn:hover {
+      background: rgba(90,255,138,0.07);
+      box-shadow: 0 0 24px var(--glow), inset 0 0 24px rgba(90,255,138,0.04);
+    }
 
     .error-banner {
-      background: rgba(239,68,68,.12);
-      border: 1px solid rgba(239,68,68,.35);
-      border-radius: 10px;
-      padding: 0.9rem 1.2rem;
-      color: #f87171;
-      font-size: 0.9rem;
-      margin-bottom: 1.4rem;
+      background: rgba(255,60,60,0.07);
+      border: 1px solid rgba(255,70,70,0.45);
+      padding: 0.7rem 1rem;
+      color: #ff6060;
+      font-size: 0.75rem;
+      margin-bottom: 1.2rem;
       display: none;
+      text-shadow: 0 0 8px rgba(255,60,60,0.5);
     }
+    .error-banner::before { content: '[!] ERROR: '; }
     .error-banner.show { display: block; }
 
     /* Loading */
@@ -137,15 +189,23 @@
     #loading-screen.active { display: flex; }
 
     .spinner {
-      width: 58px; height: 58px;
-      border-radius: 50%;
-      border: 4px solid rgba(124,111,247,.2);
+      width: 56px; height: 56px;
+      border: 2px solid var(--border-hi);
       border-top-color: var(--accent);
-      animation: spin .8s linear infinite;
-      margin-bottom: 1.6rem;
+      border-radius: 0;
+      animation: spin .9s steps(8) infinite;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 20px var(--glow);
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-label { font-size: 1.15rem; color: var(--muted); }
+    .loading-label {
+      font-family: 'VT323', monospace;
+      font-size: 2rem;
+      color: var(--text);
+      text-shadow: 0 0 14px var(--glow);
+      letter-spacing: 4px;
+      animation: flicker 4s infinite;
+    }
     .dots span { animation: blink 1.4s infinite both; }
     .dots span:nth-child(2) { animation-delay: .22s; }
     .dots span:nth-child(3) { animation-delay: .44s; }
@@ -157,58 +217,112 @@
     .results-wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem 5rem; }
 
     .plan-intro { text-align: center; margin-bottom: 1.5rem; }
-    .plan-title-text { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: 0.5rem; }
-    .plan-overview-text { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 0.95rem; }
+    .plan-title-text {
+      font-family: 'VT323', monospace;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: normal;
+      color: var(--text-hi);
+      text-shadow: 0 0 20px var(--glow-hi);
+      letter-spacing: 5px;
+      margin-bottom: 0.5rem;
+    }
+    .plan-overview-text { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 0.75rem; letter-spacing: 1px; }
 
-    .result-actions { display: flex; gap: 0.8rem; justify-content: center; margin-bottom: 2.5rem; }
-    .rbtn { padding: 0.65rem 1.4rem; border-radius: 9px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: transform .14s; }
-    .rbtn:hover { transform: translateY(-1px); }
-    .rbtn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-    .rbtn-primary { background: linear-gradient(135deg, #7c6ff7, #ff6b8b); color: #fff; }
+    .result-actions { display: flex; gap: 0.6rem; justify-content: center; margin-bottom: 2rem; }
+    .rbtn {
+      padding: 0.55rem 1.2rem;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      cursor: pointer;
+      border: 1px solid var(--border-hi);
+      background: transparent;
+      color: var(--text);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: background .1s, box-shadow .1s;
+    }
+    .rbtn:hover { background: rgba(90,255,138,0.06); box-shadow: 0 0 12px var(--glow); }
+    .rbtn-ghost { }
+    .rbtn-primary { border-color: var(--accent); color: var(--text-hi); text-shadow: 0 0 8px var(--glow); }
 
     /* Day cards */
-    .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.1rem; margin-bottom: 1.5rem; }
+    .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 0.6rem; margin-bottom: 1.2rem; }
 
-    .day-card { background: var(--card); border-radius: 18px; overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; }
-    .day-hd { padding: 1.2rem 1.4rem; display: flex; justify-content: space-between; align-items: flex-start; }
-    .day-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: .8; margin-bottom: 0.25rem; }
-    .day-focus-label { font-size: 1.1rem; font-weight: 800; line-height: 1.3; }
-    .day-meta-col { text-align: right; }
-    .day-duration { font-size: 0.78rem; opacity: .75; }
-    .intensity-pill { display: inline-block; margin-top: 0.3rem; padding: 0.18rem 0.7rem; border-radius: 20px; font-size: 0.68rem; font-weight: 700; letter-spacing: .5px; }
+    .day-card { background: var(--card); border: 1px solid var(--border); display: flex; flex-direction: column; transition: border-color .1s, box-shadow .1s; }
+    .day-card:hover { border-color: var(--border-hi); box-shadow: 0 0 14px rgba(90,255,138,0.12); }
 
-    .day-bd { padding: 1.1rem 1.4rem; flex: 1; }
-    .mini-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
-    .phase-box { background: var(--card2); border-radius: 9px; padding: 0.55rem 0.8rem; font-size: 0.83rem; color: var(--muted); margin-bottom: 1rem; }
-
-    .ex-list { margin-bottom: 1rem; }
-    .ex-row { padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
-    .ex-row:last-child { border-bottom: none; }
-    .ex-name-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.28rem; }
-    .ex-name { font-weight: 600; font-size: 0.92rem; }
-    .yt-btn {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      background: rgba(255,0,0,0.12); color: #ff4444;
-      border: 1px solid rgba(255,0,0,0.25); border-radius: 6px;
-      padding: 0.18rem 0.5rem; font-size: 0.7rem; font-weight: 600;
-      text-decoration: none; white-space: nowrap; flex-shrink: 0;
-      transition: background .15s, border-color .15s;
+    .day-hd {
+      padding: 0.85rem 1rem;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      background: var(--card2) !important;
+      border-bottom: 1px solid var(--border);
     }
-    .yt-btn:hover { background: rgba(255,0,0,0.22); border-color: rgba(255,0,0,0.5); }
-    .yt-btn svg { width: 13px; height: 13px; fill: #ff4444; flex-shrink: 0; }
-    .ex-stats { display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.77rem; color: var(--muted); }
-    .ex-note { font-size: 0.77rem; color: var(--muted); font-style: italic; margin-top: 0.25rem; }
+    .day-tag { font-size: 0.6rem; letter-spacing: 4px; color: var(--muted); margin-bottom: 0.2rem; }
+    .day-focus-label {
+      font-family: 'VT323', monospace;
+      font-size: 1.35rem; font-weight: normal;
+      letter-spacing: 2px;
+      color: var(--text-hi);
+      text-shadow: 0 0 10px var(--glow);
+      line-height: 1.2;
+    }
+    .day-meta-col { text-align: right; }
+    .day-duration { font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; }
+    .intensity-pill {
+      display: inline-block; margin-top: 0.25rem;
+      padding: 0.08rem 0.45rem;
+      font-size: 0.6rem; letter-spacing: 2px;
+      border: 1px solid var(--border-hi) !important;
+      background: transparent !important;
+      color: var(--text) !important;
+    }
 
-    .rest-inner { text-align: center; padding: 1.8rem 1rem; color: var(--muted); }
-    .rest-icon { font-size: 2.8rem; margin-bottom: 0.6rem; }
-    .rest-inner p { font-size: 0.88rem; }
+    .day-bd { padding: 0.9rem 1rem; flex: 1; }
+    .mini-label { font-size: 0.58rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 0.3rem; }
+    .mini-label::before { content: '-- '; }
+    .mini-label::after  { content: ' --'; }
 
-    .day-tip { background: rgba(124,111,247,.1); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.55rem 0.8rem; font-size: 0.82rem; color: var(--muted); margin-top: 0.6rem; }
+    .phase-box {
+      background: var(--card2);
+      border-left: 2px solid var(--dim);
+      padding: 0.45rem 0.7rem;
+      font-size: 0.74rem; color: var(--muted);
+      margin-bottom: 0.85rem; letter-spacing: 0.5px;
+    }
 
-    .bottom-tips { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-    .tip-box { background: var(--card); border-radius: 14px; padding: 1.3rem; border: 1px solid var(--border); }
-    .tip-box h3 { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
-    .tip-box p { font-size: 0.9rem; }
+    .ex-list { margin-bottom: 0.85rem; }
+    .ex-row { padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+    .ex-row:last-child { border-bottom: none; }
+    .ex-name-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.22rem; }
+    .ex-name { font-size: 0.85rem; color: var(--text); text-shadow: 0 0 6px rgba(90,255,138,0.25); letter-spacing: 1px; }
+
+    .yt-btn {
+      display: inline-flex; align-items: center;
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 0;
+      padding: 0.08rem 0.4rem; font-size: 0.6rem;
+      font-family: 'Share Tech Mono', monospace;
+      text-decoration: none; white-space: nowrap; flex-shrink: 0;
+      letter-spacing: 1px; text-transform: uppercase;
+      transition: border-color .1s, color .1s;
+    }
+    .yt-btn:hover { border-color: var(--accent); color: var(--text); }
+    .yt-btn svg { display: none; }
+
+    .ex-stats { display: flex; flex-wrap: wrap; gap: 0.7rem; font-size: 0.68rem; color: var(--muted); }
+    .ex-note { font-size: 0.68rem; color: var(--dim); margin-top: 0.18rem; letter-spacing: 0.5px; }
+    .ex-note::before { content: '> '; color: var(--muted); }
+
+    .rest-inner { text-align: center; padding: 2rem 1rem; color: var(--muted); }
+    .rest-icon { font-family: 'VT323', monospace; font-size: 2.2rem; letter-spacing: 6px; margin-bottom: 0.5rem; text-shadow: 0 0 12px var(--glow); }
+    .rest-inner p { font-size: 0.75rem; }
+
+    .day-tip { background: rgba(90,255,138,0.04); border-left: 2px solid var(--accent); padding: 0.45rem 0.7rem; font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; }
+
+    .bottom-tips { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.6rem; }
+    .tip-box { background: var(--card); border: 1px solid var(--border); padding: 1rem; }
+    .tip-box h3 { font-size: 0.6rem; letter-spacing: 3px; color: var(--muted); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+    .tip-box p { font-size: 0.78rem; }
 
     @media (max-width: 600px) {
       .days-grid { grid-template-columns: 1fr; }
@@ -222,38 +336,38 @@
 <!-- FORM -->
 <div id="form-screen" class="screen active">
   <div class="page-header">
-    <h1>💪 Workout Planner</h1>
-    <p>Get a personalized 7-day workout plan — no account needed</p>
+    <h1>Workout Planner</h1>
+    <p>Generate 7-day training protocol // No Vault-Tec account required</p>
   </div>
   <div class="form-wrap">
     <div class="error-banner" id="form-error"></div>
 
-    <p class="fieldset-title">Workout Preference</p>
+    <p class="fieldset-title">Training Environment</p>
     <div class="option-grid" id="pref-grid"></div>
 
-    <p class="fieldset-title">Fitness Goal</p>
+    <p class="fieldset-title">Mission Objective</p>
     <div class="option-grid" id="goal-grid"></div>
 
-    <p class="fieldset-title">Fitness Level</p>
+    <p class="fieldset-title">Operative Clearance Level</p>
     <div class="option-grid" id="level-grid"></div>
 
-    <button class="gen-btn" onclick="generatePlan()">Generate My 7-Day Plan →</button>
+    <button class="gen-btn" onclick="generatePlan()">>> Compile Training Protocol</button>
   </div>
 </div>
 
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="spinner"></div>
-  <div class="loading-label">Building your plan<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+  <div class="loading-label">Processing Training Data<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
 </div>
 
 <!-- RESULTS -->
 <div id="results-screen">
-  <div class="page-header"><h1>Your Workout Plan</h1></div>
+  <div class="page-header"><h1>Protocol Compiled</h1></div>
   <div class="results-wrap">
     <div class="result-actions">
-      <button class="rbtn rbtn-ghost" onclick="goBack()">← Start Over</button>
-      <button class="rbtn rbtn-primary" onclick="regen()">↻ Regenerate</button>
+      <button class="rbtn rbtn-ghost" onclick="goBack()">< Restart Sequence</button>
+      <button class="rbtn rbtn-primary" onclick="regen()">>> Recompile</button>
     </div>
     <div id="plan-out"></div>
   </div>
@@ -287,13 +401,7 @@ const LEVELS = [
 ];
 
 const DAY_COLORS = [
-  'linear-gradient(135deg,#e94560,#c0392b)',
-  'linear-gradient(135deg,#f39c12,#d35400)',
-  'linear-gradient(135deg,#27ae60,#16a085)',
-  'linear-gradient(135deg,#2980b9,#1a6fa0)',
-  'linear-gradient(135deg,#8e44ad,#6c3483)',
-  'linear-gradient(135deg,#1abc9c,#148f77)',
-  'linear-gradient(135deg,#7f8c8d,#5d6d7e)',
+  '#0b180b','#0b180b','#0b180b','#0b180b','#0b180b','#0b180b','#0b180b',
 ];
 const INT_STYLE = {
   'Low':      {bg:'#27ae6022',c:'#2ecc71'},
@@ -1000,10 +1108,10 @@ function buildPlan(pref, goal, level) {
 ───────────────────────────────────────── */
 function renderPlan(plan) {
   const IC = {
-    'Low':      {bg:'#27ae6022',c:'#2ecc71'},
-    'Moderate': {bg:'#f39c1222',c:'#f39c12'},
-    'High':     {bg:'#e74c3c22',c:'#e74c3c'},
-    'Very High':{bg:'#c0392b22',c:'#ff6b6b'},
+    'Low':      {bg:'transparent',c:'#5aff8a'},
+    'Moderate': {bg:'transparent',c:'#5aff8a'},
+    'High':     {bg:'transparent',c:'#5aff8a'},
+    'Very High':{bg:'transparent',c:'#5aff8a'},
   };
 
   let html = `
@@ -1022,12 +1130,12 @@ function renderPlan(plan) {
           <div class="day-hd" style="background:${grad}">
             <div>
               <div class="day-tag">${h(day.day_name)}</div>
-              <div class="day-focus-label">Rest & Recover 😴</div>
+              <div class="day-focus-label">Rest & Recover</div>
             </div>
           </div>
           <div class="day-bd">
             <div class="rest-inner">
-              <div class="rest-icon">🛌</div>
+              <div class="rest-icon">[Z Z Z]</div>
               <p>Allow your muscles to repair and grow. Light walking, stretching, or a gentle walk is perfectly fine.</p>
             </div>
           </div>
@@ -1048,9 +1156,9 @@ function renderPlan(plan) {
           <a class="yt-btn" href="${ytUrl}" target="_blank" rel="noopener">${ytIcon} Watch</a>
         </div>
         <div class="ex-stats">
-          ${ex.sets  ? `<span>🔁 ${ex.sets} sets</span>` : ''}
-          ${ex.reps  ? `<span>✳️ ${h(ex.reps)}</span>` : ''}
-          ${ex.rest  ? `<span>⏱ ${h(ex.rest)} rest</span>` : ''}
+          ${ex.sets  ? `<span>[SETS: ${ex.sets}]</span>` : ''}
+          ${ex.reps  ? `<span>[REPS: ${h(ex.reps)}]</span>` : ''}
+          ${ex.rest  ? `<span>[REST: ${h(ex.rest)}]</span>` : ''}
         </div>
         ${ex.notes ? `<div class="ex-note">${h(ex.notes)}</div>` : ''}
       </div>`;
@@ -1069,11 +1177,11 @@ function renderPlan(plan) {
           </div>
         </div>
         <div class="day-bd">
-          ${day.warm_up ? `<div class="mini-label">Warm-Up</div><div class="phase-box">🔥 ${h(day.warm_up)}</div>` : ''}
+          ${day.warm_up ? `<div class="mini-label">Warm-Up</div><div class="phase-box">[WARMUP] ${h(day.warm_up)}</div>` : ''}
           <div class="mini-label">Exercises</div>
           <div class="ex-list">${exHtml}</div>
-          ${day.cool_down ? `<div class="mini-label">Cool-Down</div><div class="phase-box">❄️ ${h(day.cool_down)}</div>` : ''}
-          ${day.tips ? `<div class="day-tip">💡 ${h(day.tips)}</div>` : ''}
+          ${day.cool_down ? `<div class="mini-label">Cool-Down</div><div class="phase-box">[COOLDOWN] ${h(day.cool_down)}</div>` : ''}
+          ${day.tips ? `<div class="day-tip">> ${h(day.tips)}</div>` : ''}
         </div>
       </div>`;
   });
@@ -1082,8 +1190,8 @@ function renderPlan(plan) {
 
   if (plan.nutrition_tip || plan.recovery_advice) {
     html += `<div class="bottom-tips">
-      ${plan.nutrition_tip    ? `<div class="tip-box"><h3>🥗 Nutrition</h3><p>${h(plan.nutrition_tip)}</p></div>` : ''}
-      ${plan.recovery_advice  ? `<div class="tip-box"><h3>😴 Recovery</h3><p>${h(plan.recovery_advice)}</p></div>` : ''}
+      ${plan.nutrition_tip    ? `<div class="tip-box"><h3>[Nutrition]</h3><p>${h(plan.nutrition_tip)}</p></div>` : ''}
+      ${plan.recovery_advice  ? `<div class="tip-box"><h3>[Recovery]</h3><p>${h(plan.recovery_advice)}</p></div>` : ''}
     </div>`;
   }
 
